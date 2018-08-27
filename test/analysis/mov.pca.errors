@@ -1,0 +1,4 @@
+14:4:5:Invalid argument type, expected one of {SymbolDirect, SymbolIndirect}
+15:10:10:Invalid argument type, expected one of {Constant, SymbolConstant}
+16:10:12:Invalid argument type, expected one of {Constant, SymbolConstant}
+17:10:10:Invalid argument type, expected one of {Constant, SymbolConstant}

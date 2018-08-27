@@ -1,0 +1,27 @@
+A=100
+B=200
+C=300
+N=0
+adrA=1
+adrB=2
+adrC=3
+I=4
+ORG 8
+
+in N
+mov adrA, #A
+mov adrB, #B
+mov adrC, #C
+in (adrA), N
+in (adrB), N
+MOV I,N
+
+DALJE: add (adrC), (adrA), (adrB)
+  ADD adrA, adrA, 1
+  ADD adrB, adrB, 1
+  ADD adrC, adrC, 1
+  SUB I, I, 1
+  BGT I, 0, DALJE
+  MOV adrC, #C
+  OUT (adrC), N
+  STOP

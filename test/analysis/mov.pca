@@ -1,0 +1,17 @@
+a=1
+b=2
+c=3
+x=0
+org 8
+mov b, c
+mov b, (c)
+mov b, #c
+mov (b), c
+mov b, x
+mov b, x, #c
+mov b, x, 5
+; illegal instructions
+mov #b, 1     ; 1st argument must be a destination
+mov b, x, c   ; 3rd argument can only be a constant
+mov b, x, (a)
+mov b, x, b

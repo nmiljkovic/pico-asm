@@ -1,0 +1,12 @@
+a=1
+b=2
+c=3
+x=4
+org 8
+mov b, c
+mov b, (c)
+mov b, #c
+mov (b), c
+mov b, x
+mov b, x, #c
+mov b, x, 5

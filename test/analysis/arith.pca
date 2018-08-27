@@ -1,0 +1,24 @@
+a=1
+b=2
+c=3
+z=0
+org 8
+; legal instructions
+add a,b,c
+add (a),b,c
+add a,(b),c
+add a,b,(c)
+add a,5,c
+add a,#b,c
+add a,b,5
+add a,b,#c
+add z,b,c
+; illegal instructions
+add 5,b,c
+add #a,b,c
+add a,z,c
+add a,b,z
+add a,(z),c
+add a,b,(z)
+add a,5,5
+add a,#b,#c

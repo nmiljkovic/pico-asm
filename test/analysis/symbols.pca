@@ -1,0 +1,5 @@
+a=-1 ; must be >= 0
+b=2
+c=8
+x=0
+org -1 ; should report origin error

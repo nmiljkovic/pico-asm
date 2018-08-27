@@ -1,0 +1,14 @@
+a=1
+b=2
+c=3
+z=0
+org 8
+add a,b,c
+add (a),b,c
+add a,(b),c
+add a,b,(c)
+add a,5,c
+add a,#b,c
+add a,b,5
+add a,b,#c
+add z,b,c

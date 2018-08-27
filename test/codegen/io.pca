@@ -1,0 +1,17 @@
+a=1
+b=2
+org 8
+in a
+in a, b
+in (a), b
+in a, (b)
+in (a), (b)
+in a, 5
+in a, #b
+out a
+out a, b
+out (a), b
+out a, (b)
+out (a), (b)
+out a, 5
+out a, #b

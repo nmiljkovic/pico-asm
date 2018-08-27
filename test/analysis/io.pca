@@ -1,0 +1,26 @@
+a=1
+b=2
+org 8
+; legal instructions
+in a
+in a, b
+in (a), b
+in a, (b)
+in (a), (b)
+in a, 5
+in a, #b
+out a
+out a, b
+out (a), b
+out a, (b)
+out (a), (b)
+out a, 5
+out a, #b
+; illegal instructions
+in 5
+in #a
+in a, -1
+in a, 0
+in a, 128
+out 5
+out #a

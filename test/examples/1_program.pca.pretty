@@ -1,0 +1,16 @@
+	a = 1
+	b = 2
+	c = 3
+
+	org 8
+
+start:
+	in a
+	in b
+	add c, a, b
+	out c
+	in a
+	beq a, 0, end
+	beq a, a, start
+end:
+	stop

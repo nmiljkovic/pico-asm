@@ -1,0 +1,56 @@
+{
+  "inputs": [
+    10,
+    20,
+    1,
+    30,
+    40,
+    0
+  ],
+  "outputs": [
+    30,
+    70
+  ],
+  "breakpoints": [
+    {
+      "sourceLine": 13,
+      "expectedState": [
+        {
+          "symbol": "a",
+          "value": 10
+        },
+        {
+          "symbol": "b",
+          "value": 20
+        }
+      ]
+    },
+    {
+      "sourceLine": 14,
+      "expectedState": [
+        {
+          "symbol": "c",
+          "value": 30
+        }
+      ]
+    },
+    {
+      "sourceLine": 17,
+      "expectedState": [
+        {
+          "symbol": "a",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "sourceLine": 14,
+      "expectedState": [
+        {
+          "symbol": "c",
+          "value": 70
+        }
+      ]
+    }
+  ]
+}

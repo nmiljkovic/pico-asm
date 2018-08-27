@@ -1,0 +1,22 @@
+	n = 1
+	f = 2
+
+	org 8
+
+dalje:
+	in n
+	bgt 0, n, kraj
+	jsr nf
+	out f
+	beq n, n, dalje
+kraj:
+	stop
+nf:
+	mov f, 1
+	beq n, 0, gotovo
+petlja:
+	mul f, f, n
+	sub n, n, 1
+	bgt n, 0, petlja
+gotovo:
+	rts

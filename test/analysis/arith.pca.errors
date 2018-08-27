@@ -1,0 +1,8 @@
+17:4:4:Invalid argument type, expected one of {SymbolDirect, SymbolIndirect}
+18:4:5:Invalid argument type, expected one of {SymbolDirect, SymbolIndirect}
+19:6:6:Address error in argument 'z'. Legal address [1..7].
+20:8:8:Address error in argument 'z'. Legal address [1..7].
+21:6:8:Address error in argument '(z)'. Legal address [1..7].
+22:8:10:Address error in argument '(z)'. Legal address [1..7].
+23:0:8:Instruction supports only 1 constant argument.
+24:0:10:Instruction supports only 1 constant argument.

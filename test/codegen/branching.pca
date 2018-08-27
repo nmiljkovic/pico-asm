@@ -1,0 +1,11 @@
+a=1
+b=2
+c=3
+org 15
+beq a, b, label
+beq a, (b), label
+beq (a), b, label
+beq (a), (b), label
+beq (a), (b), (c)
+beq a, 0, label
+label: stop b

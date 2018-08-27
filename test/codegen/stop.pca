@@ -1,0 +1,7 @@
+a = 1
+b = 2
+org 8
+stop
+stop a
+stop a, (b)
+stop a, (a), b

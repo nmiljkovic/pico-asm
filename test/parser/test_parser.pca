@@ -1,0 +1,16 @@
+a = X
+
+org 100
+
+mov 0
+mov x
+add d
+add 5
+add d, d
+add d, 5
+add 5, 5,
+in s, 5
+jsr 1
+rts 1
+
+stop
