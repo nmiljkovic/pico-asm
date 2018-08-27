@@ -23,6 +23,7 @@ function visitChildren(ctx) {
 function CodegenVisitor() {
   PicoVisitor.call(this);
   this.symbols = new Map();
+  this.labels = [];
   this.branches = [];
   return this;
 }
@@ -36,6 +37,13 @@ CodegenVisitor.prototype._getSymbol = function (symbol) {
 
 CodegenVisitor.prototype._setSymbol = function (symbol, value) {
   return this.symbols.set(symbol.toLowerCase(), value);
+};
+
+CodegenVisitor.prototype._setLabel = function (name, value) {
+  name = name.toLowerCase();
+  this.labels = this.labels.filter(label => label !== name);
+  this.labels.push(name);
+  return this._setSymbol(name, value);
 };
 
 CodegenVisitor.prototype.resolveArgumentTypes = function (ctx) {
@@ -64,6 +72,7 @@ CodegenVisitor.prototype.visitProgram = function (ctx) {
   return {
     origin: this.origin,
     bytecode: this.asm.code,
+    labels: this.labels,
   };
 };
 
@@ -144,7 +153,7 @@ CodegenVisitor.prototype.visitConstant = function (ctx) {
 CodegenVisitor.prototype.visitLabel = function (ctx) {
   const identifier = ctx.identifier();
   const name = identifier.accept(this);
-  this._setSymbol(name, this.asm.pc);
+  this._setLabel(name, this.asm.pc);
 };
 
 CodegenVisitor.prototype.visitArgument = function (ctx) {

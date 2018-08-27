@@ -5,6 +5,7 @@ function DebugVm(code, io) {
 
   this.sourceMap = code.sourceMap;
   this.symbolMap = code.symbolMap;
+  this.labels = code.labels;
 
   this.breakpoints = new Set();
   this.sourceLine = -1;
