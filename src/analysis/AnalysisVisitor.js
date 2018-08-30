@@ -147,20 +147,20 @@ AnalysisVisitor.prototype.visitLabel = function (ctx) {
 // * in 3 argument version, 3rd argument must be a constant
 //   in the form of #symbol or hardcoded integer
 AnalysisVisitor.prototype.visitMoveInstr = function (ctx) {
-  const arguments = this.resolveArgumentTypes(ctx);
+  const args = this.resolveArgumentTypes(ctx);
 
-  if (arguments.length) {
+  if (args.length) {
     // First argument must be a memory location.
-    const first = arguments[0];
+    const first = args[0];
     first.assertOfType(
       SymbolDirectArgContext,
       SymbolIndirectArgContext
     );
   }
 
-  if (arguments.length === 3) {
+  if (args.length === 3) {
     // Third argument must be a constant if it exists.
-    const third = arguments[2];
+    const third = args[2];
     third.assertOfType(
       ConstantArgContext,
       SymbolConstantArgContext,
@@ -169,14 +169,14 @@ AnalysisVisitor.prototype.visitMoveInstr = function (ctx) {
 };
 
 AnalysisVisitor.prototype.visitArithmeticInstr = function (ctx) {
-  const arguments = this.resolveArgumentTypes(ctx);
-  const destination = arguments[0];
+  const args = this.resolveArgumentTypes(ctx);
+  const destination = args[0];
   destination.assertOfType(
     SymbolDirectArgContext,
     SymbolIndirectArgContext,
   );
 
-  const operands = arguments.slice(1);
+  const operands = args.slice(1);
 
   // Ensure that only a single operand can be a constant.
   const constants = operands.filter(operand => operand.isOfType(
@@ -208,17 +208,17 @@ AnalysisVisitor.prototype.visitArithmeticInstr = function (ctx) {
 // * 2nd operand behaves like the first argument OR it can be constant 0
 // * 3rd argument (branch target) must be a symbol direct or indirect memory access
 AnalysisVisitor.prototype.visitBranchInstr = function (ctx) {
-  const arguments = this.resolveArgumentTypes(ctx);
+  const args = this.resolveArgumentTypes(ctx);
   const branchTarget = ctx.branchTarget().accept(this);
 
-  arguments
+  args
     .filter(arg => arg.isOfType(ConstantArgContext))
     .filter(arg => arg.value !== 0)
     .forEach(arg => {
       this.newError(arg.ctx, errorMessages.constantMustBeZero());
     });
 
-  arguments.forEach(arg => arg.assertOfType(
+  args.forEach(arg => arg.assertOfType(
     SymbolDirectArgContext,
     SymbolIndirectArgContext,
     ConstantArgContext
@@ -233,19 +233,19 @@ AnalysisVisitor.prototype.visitBranchInstr = function (ctx) {
 };
 
 AnalysisVisitor.prototype.visitIoInstr = function (ctx) {
-  const arguments = this.resolveArgumentTypes(ctx);
+  const args = this.resolveArgumentTypes(ctx);
 
-  const sourceOrDest = arguments[0];
+  const sourceOrDest = args[0];
   sourceOrDest.assertOfType(
     SymbolDirectArgContext,
     SymbolIndirectArgContext,
   );
 
-  if (arguments.length !== 2) {
+  if (args.length !== 2) {
     return;
   }
 
-  const length = arguments[1];
+  const length = args[1];
   const isConstant = length.isOfType(
     SymbolConstantArgContext,
     ConstantArgContext
@@ -265,8 +265,8 @@ AnalysisVisitor.prototype.visitIoInstr = function (ctx) {
 // These memory locations must be a symbol direct or indirect memory access and
 // cannot address 0 in FDA.
 AnalysisVisitor.prototype.visitStopInstr = function (ctx) {
-  const arguments = this.resolveArgumentTypes(ctx);
-  arguments
+  const args = this.resolveArgumentTypes(ctx);
+  args
     .filter(arg => arg.assertOfType(
       SymbolDirectArgContext,
       SymbolIndirectArgContext

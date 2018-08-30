@@ -20,11 +20,11 @@ function visitChildren(ctx) {
 
 function visitArguments(ctx) {
   const args = ctx.argument();
-  const arguments = [];
+  const output = [];
   for (let i = 0; i < args.length; i++) {
-    arguments.push(args[i].accept(this));
+    output.push(args[i].accept(this));
   }
-  return arguments.join(", ");
+  return output.join(", ");
 }
 
 PrettyPrintVisitor.prototype.visitProgram = function (ctx) {
@@ -73,27 +73,27 @@ PrettyPrintVisitor.prototype.visitInstruction = function (ctx) {
 };
 
 PrettyPrintVisitor.prototype.visitMoveInstr = function (ctx) {
-  const arguments = visitArguments.call(this, ctx);
-  return `mov ${arguments}`;
+  const args = visitArguments.call(this, ctx);
+  return `mov ${args}`;
 };
 
 PrettyPrintVisitor.prototype.visitIoInstr = function (ctx) {
   const instr = ctx.children[0].getText().toLowerCase();
-  const arguments = visitArguments.call(this, ctx);
-  return `${instr} ${arguments}`;
+  const args = visitArguments.call(this, ctx);
+  return `${instr} ${args}`;
 };
 
 PrettyPrintVisitor.prototype.visitArithmeticInstr = function (ctx) {
   const mnemonic = ctx.children[0].getText().toLowerCase();
-  const arguments = visitArguments.call(this, ctx);
-  return `${mnemonic} ${arguments}`;
+  const args = visitArguments.call(this, ctx);
+  return `${mnemonic} ${args}`;
 };
 
 PrettyPrintVisitor.prototype.visitBranchInstr = function (ctx) {
   const mnemonic = ctx.children[0].getText().toLowerCase();
-  const arguments = visitArguments.call(this, ctx);
+  const args = visitArguments.call(this, ctx);
   const branchTarget = ctx.branchTarget().accept(this);
-  return `${mnemonic} ${arguments}, ${branchTarget}`;
+  return `${mnemonic} ${args}, ${branchTarget}`;
 };
 
 PrettyPrintVisitor.prototype.visitBranchTarget = function (ctx) {
@@ -102,9 +102,9 @@ PrettyPrintVisitor.prototype.visitBranchTarget = function (ctx) {
 };
 
 PrettyPrintVisitor.prototype.visitStopInstr = function (ctx) {
-  const arguments = visitArguments.call(this, ctx);
-  if (arguments.length) {
-    return `stop ${arguments}`;
+  const args = visitArguments.call(this, ctx);
+  if (args.length) {
+    return `stop ${args}`;
   }
   return `stop`;
 };
