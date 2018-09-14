@@ -8,7 +8,12 @@ bgt a, (b), label
 bgt (a), b, label
 bgt (a), (b), label
 bgt (a), (b), (c)
+bgt a, b, c
+bgt a, 0, label
+bgt 0, a, label
 ; illegal instructions
 bgt a, b, label2
-bgt a, b, c
+bgt d, e, f
+bgt a, 1, label
+bgt 0, 0, label
 label: stop b

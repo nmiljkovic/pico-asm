@@ -20,7 +20,7 @@ DALJE: add (adrC), (adrA), (adrB)
   ADD adrA, adrA, 1
   ADD adrB, adrB, 1
   ADD adrC, adrC, 1
-  SUB I, I, 1
+  SUB i, I, 1
   BGT I, 0, DALJE
   MOV adrC, #C
   OUT (adrC), N

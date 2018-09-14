@@ -1,11 +1,15 @@
 grammar Pico;
 
 program
-  : EOL? symbols origin instructions
+  : EOL* symbols origin instructions
   ;
 
 symbols
-  : (symbolDecl? EOL)*
+  : symbolDeclLine*
+  ;
+
+symbolDeclLine
+  : symbolDecl? comment? EOL
   ;
 
 symbolDecl
@@ -13,15 +17,15 @@ symbolDecl
   ;
 
 origin
-  : ORG constant EOL
+  : ORG constant comment? EOL
   ;
 
 instructions
-  : (line EOL)*
+  : line+
   ;
 
 line
-  : label? (instruction?)
+  : label? instruction? comment? EOL
   ;
 
 instruction
@@ -97,6 +101,10 @@ symbolIndirectArg
 
 argument
   : constantArg | symbolConstantArg | symbolDirectArg | symbolIndirectArg
+  ;
+
+comment
+  : COMMENT
   ;
 
 ORG: O R G;
@@ -230,11 +238,11 @@ SIGN
   ;
 
 EOL
-  : [\r\n]+
+  : [\r\n]
   ;
 
 COMMENT
-  : ';' ~ [\r\n]* -> skip
+  : ';' ~ [\r\n]*
   ;
 
 WS

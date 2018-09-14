@@ -6,3 +6,8 @@
 22:8:10:Address error in argument '(z)'. Legal address [1..7].
 23:0:8:Instruction supports only 1 constant argument.
 24:0:10:Instruction supports only 1 constant argument.
+25:4:4:Symbol 'd' has not been defined.
+25:6:6:Symbol 'e' has not been defined.
+25:8:8:Symbol 'f' has not been defined.
+26:6:6:Constant '32768' must be in range [-32768..32767]
+27:6:7:Constant '-32769' must be in range [-32768..32767]

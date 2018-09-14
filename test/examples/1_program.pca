@@ -4,10 +4,9 @@
         c = 3
 
         ; Origin
-        ORG 8
+        ORG 8 ; Must start at 8 or above
 
         ; Instructions
-
 start:  in a                ; input a
         in b                ; input b
         add c, a, b         ; c = a + b

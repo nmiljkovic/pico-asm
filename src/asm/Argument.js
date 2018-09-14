@@ -10,8 +10,9 @@ MemoryReferenceArgument.prototype.atIndex = function (index) {
   return arg << ((2 - index) * 4);
 };
 
-function ConstantArgument(value) {
+function ConstantArgument(value, symbolName) {
   this.value = value;
+  this.symbolName = symbolName;
 }
 
 ConstantArgument.prototype.asHalfWord = function () {

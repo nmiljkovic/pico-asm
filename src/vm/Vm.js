@@ -2,6 +2,7 @@ const {
   memorySize,
   fdaSize,
   opCodes,
+  minConstant,
 } = require("../architecture");
 
 function Vm(code, io) {
@@ -73,6 +74,14 @@ Vm.prototype.step = function () {
   }
 };
 
+Vm.prototype._truncateArithResult = function (result) {
+  const truncated = result & 0xFFFF;
+  if (truncated & 0x8000) {
+    return 2 * minConstant + truncated;
+  }
+  return truncated;
+};
+
 Vm.prototype._io = function (opcode, args) {
   const arrayAddr = this._readAddr(args[0]);
   // i2 determines if the length is in a memory location or encoded
@@ -134,19 +143,21 @@ Vm.prototype._mov = function (args) {
     return Promise.resolve(false);
   }
 
-  // Type 3
+  // Type 3 or 4
+  const destAddr = this._readAddr(args[0]);
+  const sourceAddr = this._readAddr(args[1]);
+  let length = 0;
   if (args[2] === 0xF) {
-    const destAddr = this._readAddr(args[0]);
-    const sourceAddr = this._readAddr(args[1]);
-    const length = this._nextWord();
-    for (let i = 0; i < length; i++) {
-      const value = this._readMem(sourceAddr + i);
-      this._writeMem(destAddr + i, value);
-    }
-    return value;
+    // Type 3
+    length = this._nextWord();
+  } else {
+    length = this._readArg(args[2]);
   }
-
-  return Promise.reject(new Error("Unhandled mov instruction type"));
+  for (let i = 0; i < length; i++) {
+    const value = this._readMem(sourceAddr + i);
+    this._writeMem(destAddr + i, value);
+  }
+  return Promise.resolve(false);
 };
 
 Vm.prototype._arith = function (opcode, args) {
@@ -189,7 +200,7 @@ Vm.prototype._arith = function (opcode, args) {
       break;
   }
 
-  this._writeArg(destination, result);
+  this._writeArg(destination, this._truncateArithResult(result));
   return Promise.resolve(false);
 };
 
@@ -221,7 +232,7 @@ Vm.prototype._branch = function (opcode, args) {
   if ((args[2] & 0x8) !== 0) {
     branchTarget = this._nextWord();
   } else {
-    branchTarget = this._readAddr(args[2]);
+    branchTarget = this._readArg(args[2]);
   }
 
   let conditionMet = false;

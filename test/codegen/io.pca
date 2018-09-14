@@ -1,5 +1,6 @@
 a=1
 b=2
+z=127
 org 8
 in a
 in a, b
@@ -8,6 +9,7 @@ in a, (b)
 in (a), (b)
 in a, 5
 in a, #b
+in a, #z
 out a
 out a, b
 out (a), b
@@ -15,3 +17,4 @@ out a, (b)
 out (a), (b)
 out a, 5
 out a, #b
+out a, #z

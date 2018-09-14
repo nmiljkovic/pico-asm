@@ -5,8 +5,8 @@ module.exports = {
   symbolAlreadyDefined: function (symbolName) {
     return `Symbol '${symbolName}' has already been defined.`;
   },
-  symbolGtOrEqZero: function (symbolName) {
-    return `Symbol '${symbolName}' must greater than or equal to zero.`;
+  symbolValueOutOfRange: function (symbolName, value) {
+    return `Symbol '${symbolName}' value ${value} is out of range.`;
   },
   originInvalidValue: function (boundary) {
     return `Origin must be greater than or equal to ${boundary}.`;

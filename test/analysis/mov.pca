@@ -10,8 +10,11 @@ mov (b), c
 mov b, x
 mov b, x, #c
 mov b, x, 5
+mov b, x, c
+mov b, x, b
 ; illegal instructions
 mov #b, 1     ; 1st argument must be a destination
-mov b, x, c   ; 3rd argument can only be a constant
 mov b, x, (a)
-mov b, x, b
+mov d, e
+mov a, 32768
+mov a, -32769

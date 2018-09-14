@@ -2,9 +2,7 @@
 	s1 = 2
 	s2 = 3
 	k = 4
-
 	org 8
-
 	in n
 	mov s1, 0
 	mov s2, 0

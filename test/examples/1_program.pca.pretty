@@ -1,16 +1,20 @@
+	; Symbols
 	a = 1
 	b = 2
 	c = 3
 
-	org 8
+	; Origin
+	org 8	; Must start at 8 or above
 
+	; Instructions
 start:
-	in a
-	in b
-	add c, a, b
-	out c
-	in a
-	beq a, 0, end
-	beq a, a, start
+	in a	; input a
+	in b	; input b
+	add c, a, b	; c = a + b
+	out c	; output c
+
+	in a	; input a
+	beq a, 0, end	; if a=0 goto end
+	beq a, a, start	; goto start
 end:
-	stop
+	stop	; stop execution

@@ -1,4 +1,5 @@
 const PicoVisitor = require("./parser/PicoVisitor").PicoVisitor;
+const PicoLexer = require("./parser/PicoLexer").PicoLexer;
 
 function PrettyPrintVisitor() {
   PicoVisitor.call(this);
@@ -13,9 +14,9 @@ function visitChildren(ctx) {
   if (!ctx.children) {
     return "";
   }
-  return ctx.children.map(child => {
-    return child.accept(this);
-  }).filter(x => x).join("\n");
+  return ctx.children
+    .map(child => child.accept(this))
+    .join("\n");
 }
 
 function visitArguments(ctx) {
@@ -27,36 +28,78 @@ function visitArguments(ctx) {
   return output.join(", ");
 }
 
+PrettyPrintVisitor.prototype.visitChildren = visitChildren;
+
+PrettyPrintVisitor.prototype._normalizeSymbolName = function (name) {
+  if (this.symbolMap.has(name.toLowerCase())) {
+    return this.symbolMap.get(name.toLowerCase());
+  }
+  return name;
+};
+
 PrettyPrintVisitor.prototype.visitProgram = function (ctx) {
+  this.symbolMap = new Map();
   const symbols = ctx.symbols().accept(this);
   const origin = ctx.origin().accept(this);
   const instructions = ctx.instructions().accept(this);
 
   let output = [];
   if (symbols.length) {
-    output.push(symbols + "\n");
+    output.push(symbols);
   }
-  output.push(origin + "\n");
+  output.push(origin);
   output.push(instructions + "\n");
   return output.join("\n");
 };
-PrettyPrintVisitor.prototype.visitSymbols = visitChildren;
-PrettyPrintVisitor.prototype.visitInstructions = visitChildren;
-PrettyPrintVisitor.prototype.visitLine = visitChildren;
+
+PrettyPrintVisitor.prototype.visitComment = function (ctx) {
+  return ctx.getText();
+};
+
+PrettyPrintVisitor.prototype.visitLine = function (ctx) {
+  let output = "";
+  if (ctx.label()) {
+    output += ctx.label().accept(this);
+  }
+  if (ctx.instruction()) {
+    if (output.length) {
+      output += "\n";
+    }
+    output += "\t" + ctx.instruction().accept(this);
+  }
+  if (ctx.comment()) {
+    output += "\t" + ctx.comment().accept(this);
+  }
+  return output;
+};
+
+PrettyPrintVisitor.prototype.visitSymbolDeclLine = function (ctx) {
+  let output = "";
+  if (ctx.symbolDecl()) {
+    output += this.indent + ctx.symbolDecl().accept(this);
+  }
+  if (ctx.comment()) {
+    output += this.indent + ctx.comment().accept(this);
+  }
+  return output;
+};
 
 PrettyPrintVisitor.prototype.visitSymbolDecl = function (ctx) {
   const identifier = ctx.identifier().accept(this);
   const value = ctx.constant().accept(this);
-  return `${this.indent}${identifier} = ${value}`;
+  this.symbolMap.set(identifier.toLowerCase(), identifier);
+  return `${identifier} = ${value}`;
 };
 
 PrettyPrintVisitor.prototype.visitOrigin = function (ctx) {
   const address = ctx.constant().accept(this);
-  return `${this.indent}org ${address}`;
+  const comment = ctx.comment() ? this.indent + ctx.comment().accept(this) : "";
+  return `${this.indent}org ${address}${comment}`;
 };
 
 PrettyPrintVisitor.prototype.visitLabel = function (ctx) {
   const labelName = ctx.identifier().accept(this);
+  this.symbolMap.set(labelName.toLowerCase(), labelName);
   return `${labelName}:`;
 };
 
@@ -66,10 +109,6 @@ PrettyPrintVisitor.prototype.visitIdentifier = function (ctx) {
 
 PrettyPrintVisitor.prototype.visitConstant = function (ctx) {
   return ctx.getText();
-};
-
-PrettyPrintVisitor.prototype.visitInstruction = function (ctx) {
-  return this.indent + ctx.children[0].accept(this);
 };
 
 PrettyPrintVisitor.prototype.visitMoveInstr = function (ctx) {
@@ -96,11 +135,6 @@ PrettyPrintVisitor.prototype.visitBranchInstr = function (ctx) {
   return `${mnemonic} ${args}, ${branchTarget}`;
 };
 
-PrettyPrintVisitor.prototype.visitBranchTarget = function (ctx) {
-  const target = ctx.children[0].accept(this);
-  return target;
-};
-
 PrettyPrintVisitor.prototype.visitStopInstr = function (ctx) {
   const args = visitArguments.call(this, ctx);
   if (args.length) {
@@ -118,16 +152,14 @@ PrettyPrintVisitor.prototype.visitReturnInstr = function (ctx) {
   return `rts`;
 };
 
-PrettyPrintVisitor.prototype.visitArgument = function (ctx) {
-  return ctx.children[0].accept(this);
-};
-
 PrettyPrintVisitor.prototype.visitSymbolConstantArg = function (ctx) {
-  return "#" + ctx.identifier().accept(this);
+  const symbolName = ctx.identifier().accept(this);
+  return `#${this._normalizeSymbolName(symbolName)}`;
 };
 
 PrettyPrintVisitor.prototype.visitSymbolDirectArg = function (ctx) {
-  return ctx.identifier().accept(this);
+  const symbolName = ctx.identifier().accept(this);
+  return this._normalizeSymbolName(symbolName);
 };
 
 PrettyPrintVisitor.prototype.visitConstantArg = function (ctx) {
@@ -135,7 +167,8 @@ PrettyPrintVisitor.prototype.visitConstantArg = function (ctx) {
 };
 
 PrettyPrintVisitor.prototype.visitSymbolIndirectArg = function (ctx) {
-  return "(" + ctx.identifier().accept(this) + ")";
+  const symbolName = ctx.identifier().accept(this);
+  return `(${this._normalizeSymbolName(symbolName)})`;
 };
 
 exports.PrettyPrintVisitor = PrettyPrintVisitor;

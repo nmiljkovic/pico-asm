@@ -14,11 +14,14 @@ add a,b,5
 add a,b,#c
 add z,b,c
 ; illegal instructions
-add 5,b,c
-add #a,b,c
-add a,z,c
-add a,b,z
-add a,(z),c
-add a,b,(z)
-add a,5,5
-add a,#b,#c
+add 5,b,c   ; constant as first parameter
+add #a,b,c  ; symbol value constant as first parameter
+add a,z,c   ; z value is 0
+add a,b,z   ; z value is 0
+add a,(z),c ; z value is 0
+add a,b,(z) ; z value is 0
+add a,5,5   ; two constants
+add a,#b,#c ; two symbol value constants
+add d,e,f   ; non existent symbols
+add a,32768,c   ; constant out of range
+add a,-32769,c  ; constant out of range

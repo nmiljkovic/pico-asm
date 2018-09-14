@@ -6,7 +6,6 @@
 	adrB = 2
 	adrC = 3
 	I = 4
-
 	org 8
 
 	in N
@@ -16,6 +15,7 @@
 	in (adrA), N
 	in (adrB), N
 	mov I, N
+
 DALJE:
 	add (adrC), (adrA), (adrB)
 	add adrA, adrA, 1

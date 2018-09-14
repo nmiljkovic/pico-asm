@@ -24,7 +24,7 @@ function CodegenVisitor() {
   PicoVisitor.call(this);
   this.symbols = new Map();
   this.labels = [];
-  this.branches = [];
+  this.labelReferences = [];
   return this;
 }
 
@@ -55,8 +55,8 @@ CodegenVisitor.prototype.resolveArgumentTypes = function (ctx) {
   return resolved;
 };
 
-CodegenVisitor.prototype.patchBranchAddresses = function () {
-  this.branches.forEach(target => {
+CodegenVisitor.prototype.patchLabelReferences = function () {
+  this.labelReferences.forEach(target => {
     const destination = this._getSymbol(target.symbolName);
     target.patch(destination);
   });
@@ -67,7 +67,7 @@ CodegenVisitor.prototype.visitProgram = function (ctx) {
   ctx.origin().accept(this);
   ctx.instructions().accept(this);
 
-  this.patchBranchAddresses();
+  this.patchLabelReferences();
 
   return {
     origin: this.origin,
@@ -76,9 +76,7 @@ CodegenVisitor.prototype.visitProgram = function (ctx) {
   };
 };
 
-CodegenVisitor.prototype.visitLine = visitChildren;
-CodegenVisitor.prototype.visitSymbols = visitChildren;
-CodegenVisitor.prototype.visitInstructions = visitChildren;
+CodegenVisitor.prototype.visitChildren = visitChildren;
 
 CodegenVisitor.prototype.visitOrigin = function (ctx) {
   const constant = ctx.constant();
@@ -103,7 +101,10 @@ CodegenVisitor.prototype.visitArithmeticInstr = function (ctx) {
 
 CodegenVisitor.prototype.visitMoveInstr = function (ctx) {
   const args = this.resolveArgumentTypes(ctx);
-  this.asm.mov(args);
+  const labelReference = this.asm.mov(args);
+  if (labelReference) {
+    this.labelReferences.push(labelReference);
+  }
 };
 
 CodegenVisitor.prototype.visitIoInstr = function (ctx) {
@@ -116,9 +117,9 @@ CodegenVisitor.prototype.visitBranchInstr = function (ctx) {
   const mnemonic = ctx.children[0].getText().toLowerCase();
   const args = this.resolveArgumentTypes(ctx);
   const branchTarget = ctx.branchTarget().accept(this);
-  const branchToFix = this.asm[mnemonic](args, branchTarget);
-  if (branchToFix) {
-    this.branches.push(branchToFix);
+  const labelReference = this.asm[mnemonic](args, branchTarget);
+  if (labelReference) {
+    this.labelReferences.push(labelReference);
   }
 };
 
@@ -129,7 +130,7 @@ CodegenVisitor.prototype.visitBranchTarget = function (ctx) {
 CodegenVisitor.prototype.visitCallInstr = function (ctx) {
   const branchTarget = ctx.symbolDirectArg().accept(this);
   const branchToFix = this.asm.jsr(branchTarget);
-  this.branches.push(branchToFix);
+  this.labelReferences.push(branchToFix);
 };
 
 CodegenVisitor.prototype.visitReturnInstr = function (ctx) {
@@ -172,11 +173,11 @@ CodegenVisitor.prototype.visitSymbolIndirectArg = CodegenVisitor.prototype._visi
 CodegenVisitor.prototype.visitSymbolConstantArg = function (ctx) {
   const symbolName = ctx.identifier().accept(this);
   const value = this._getSymbol(symbolName);
-  return new ConstantArgument(value);
+  return new ConstantArgument(value, symbolName);
 };
 CodegenVisitor.prototype.visitConstantArg = function (ctx) {
   const constant = ctx.constant().accept(this);
-  return new ConstantArgument(constant);
+  return new ConstantArgument(constant, null);
 };
 
 exports.CodegenVisitor = CodegenVisitor;

@@ -63,6 +63,9 @@ Asm.prototype._mov2 = function (args) {
     word |= 8;
     this._put(word);
     this._putC(source.value);
+    if (source.symbolName) {
+      return this._newLabelReference(source.symbolName);
+    }
   }
 };
 
@@ -75,9 +78,15 @@ Asm.prototype._mov3 = function (args) {
 
   word |= dest.atIndex(0);
   word |= source.atIndex(1);
-  word |= 0xF;
-  this._put(word);
-  this._putC(length.value);
+
+  if (length instanceof ConstantArgument) {
+    word |= 0xF;
+    this._put(word);
+    this._putC(length.value);
+  } else {
+    word |= length.atIndex(2);
+    this._put(word);
+  }
 };
 
 Asm.prototype.in = function (args) {
@@ -90,10 +99,9 @@ Asm.prototype.out = function (args) {
 
 Asm.prototype.mov = function (args) {
   if (args.length === 2) {
-    this._mov2(args);
-  } else {
-    this._mov3(args);
+    return this._mov2(args);
   }
+  return this._mov3(args);
 };
 
 Asm.prototype.add = function (args) {
@@ -124,7 +132,7 @@ Asm.prototype.jsr = function (branchTarget) {
   let word = opCodes.JSR << 12;
   this._put(word);
   this._putC(0x7FFF);
-  return this._newBranchTarget(branchTarget.symbolName);
+  return this._newLabelReference(branchTarget.symbolName);
 };
 
 Asm.prototype.rts = function () {
@@ -157,7 +165,7 @@ Asm.prototype._branchCond = function (opcode, args, branchTarget) {
   word |= 0x8;
   this._put(word);
   this._putC(0x7FFF);
-  return this._newBranchTarget(branchTarget.symbolName);
+  return this._newLabelReference(branchTarget.symbolName);
 };
 
 Asm.prototype._arith = function (opcode, args) {
@@ -194,12 +202,12 @@ Asm.prototype.stop = function (args) {
   this._put(word);
 };
 
-Asm.prototype._newBranchTarget = function (symbolName) {
+Asm.prototype._newLabelReference = function (symbolName) {
   const addr = this.code.length - 1;
   return {
     symbolName: symbolName,
-    patch: (destination) => {
-      this.code[addr] = destination;
+    patch: (value) => {
+      this.code[addr] = value;
     }
   };
 };

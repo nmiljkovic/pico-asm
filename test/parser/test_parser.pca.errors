@@ -7,4 +7,4 @@
 10:8:9:mismatched input '\n' expecting ','
 11:9:10:mismatched input '\n' expecting {'#', '(', IDENTIFIER, NUMBER, SIGN}
 13:4:5:mismatched input '1' expecting IDENTIFIER
-14:4:5:extraneous input '1' expecting EOL
+14:4:5:extraneous input '1' expecting {EOL, COMMENT}

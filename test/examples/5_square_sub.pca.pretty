@@ -3,9 +3,7 @@
 	n = 3
 	k = 4
 	m = 5
-
 	org 8
-
 	mov k, 0
 	mov m, #n
 l1:
@@ -14,6 +12,7 @@ l1:
 	add k, k, 1
 	bgt m, k, l1
 	stop
+
 sbr:
 	mov x, 0
 l2:

@@ -24,6 +24,12 @@ PicoVisitor.prototype.visitSymbols = function (ctx) {
 };
 
 
+// Visit a parse tree produced by PicoParser#symbolDeclLine.
+PicoVisitor.prototype.visitSymbolDeclLine = function (ctx) {
+  return this.visitChildren(ctx);
+};
+
+
 // Visit a parse tree produced by PicoParser#symbolDecl.
 PicoVisitor.prototype.visitSymbolDecl = function (ctx) {
   return this.visitChildren(ctx);
@@ -146,6 +152,12 @@ PicoVisitor.prototype.visitSymbolIndirectArg = function (ctx) {
 
 // Visit a parse tree produced by PicoParser#argument.
 PicoVisitor.prototype.visitArgument = function (ctx) {
+  return this.visitChildren(ctx);
+};
+
+
+// Visit a parse tree produced by PicoParser#comment.
+PicoVisitor.prototype.visitComment = function (ctx) {
   return this.visitChildren(ctx);
 };
 

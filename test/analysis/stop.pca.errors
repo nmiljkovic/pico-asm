@@ -1,5 +1,6 @@
-10:5:5:Address error in argument 'c'. Legal address [0..7].
-10:8:10:Address error in argument '(c)'. Legal address [0..7].
+10:5:5:Address error in argument 'c'. Legal address [1..7].
+10:8:10:Address error in argument '(c)'. Legal address [1..7].
 11:5:6:Invalid argument type, expected one of {SymbolDirect, SymbolIndirect}
 11:9:9:Invalid argument type, expected one of {SymbolDirect, SymbolIndirect}
 12:5:5:Address error in argument 'x'. Legal address [1..7].
+13:5:5:Symbol 'd' has not been defined.

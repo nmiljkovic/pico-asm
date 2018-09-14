@@ -1,2 +1,5 @@
-1:2:3:Symbol 'a' must greater than or equal to zero.
-5:4:5:Origin must be greater than or equal to 8.
+7:2:3:Symbol 'r' value -32769 is out of range.
+8:2:2:Symbol 's' value 32768 is out of range.
+9:0:0:Symbol 'a' has already been defined.
+10:4:5:Origin must be greater than or equal to 8.
+13:0:0:Symbol 'label' has already been defined.

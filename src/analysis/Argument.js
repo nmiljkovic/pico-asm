@@ -7,16 +7,37 @@ const {
   ConstantArgContext
 } = PicoParser;
 
-const {fdaSize, memorySize} = require("../architecture");
+function getArgumentName(klass) {
+  if (klass === SymbolDirectArgContext) {
+    return "SymbolDirect";
+  }
+  if (klass === SymbolIndirectArgContext) {
+    return "SymbolIndirect";
+  }
+  if (klass === SymbolConstantArgContext) {
+    return "SymbolConstant";
+  }
+  if (klass === ConstantArgContext) {
+    return "Constant";
+  }
+  throw new Error("unknown argument type provided");
+}
+
+const {
+  fdaSize, memorySize,
+  minConstant, maxConstant
+} = require("../architecture");
 const maxAddress = memorySize - 1;
 
 function Argument(analyzer, ctx) {
   this.analyzer = analyzer;
   this.ctx = ctx;
   this.value = 1;
-  this.isBranchTarget = false;
   if (ctx.identifier) {
     this.identifier = ctx.identifier().accept(this.analyzer);
+  }
+  if (this.isOfType(ConstantArgContext)) {
+    this.value = ctx.constant().accept(analyzer);
   }
 }
 
@@ -36,7 +57,7 @@ Argument.prototype.assertOfType = function () {
 
   const types = [];
   for (let i = 0; i < arguments.length; i++) {
-    types.push(arguments[i].name.replace("ArgContext", ""));
+    types.push(getArgumentName(arguments[i]));
   }
   this.analyzer.newError(
     this.ctx,
@@ -45,12 +66,23 @@ Argument.prototype.assertOfType = function () {
   return false;
 };
 
-Argument.prototype.assertSymbolExists = function () {
+Argument.prototype.assertSymbolExists = function (allowedRange) {
   if (this.isOfType(ConstantArgContext)) {
-    this.value = this.ctx.constant().accept(this.analyzer);
+    this._assertConstantInRange();
     return true;
   }
 
+  if (!this._assertSymbolExists()) {
+    return false;
+  }
+
+  this.value = this.analyzer.getSymbol(this.identifier);
+
+  this._assertSymbolInRange(allowedRange);
+  return this.value;
+};
+
+Argument.prototype.assertBranchTargetExists = function () {
   const symbolName = this.identifier;
   if (!this.analyzer.hasSymbol(symbolName)) {
     this.newError(
@@ -58,51 +90,46 @@ Argument.prototype.assertSymbolExists = function () {
     );
     return false;
   }
-
-  this.value = this.analyzer.getSymbol(symbolName);
-  if (this.isBranchTarget) {
-    this._assertBranchTargetInRange();
-    return this.value;
-  }
-
-  this._assertSymbolInRange();
-  return this.value;
 };
 
-Argument.prototype._assertBranchTargetInRange = function () {
-  const supportedBranchType = this.assertOfType(
-    SymbolDirectArgContext,
-    SymbolIndirectArgContext,
-  );
-  if (!supportedBranchType) {
+Argument.prototype._assertSymbolExists = function () {
+  const symbolName = this.identifier;
+  if (!this.analyzer.hasSymbol(symbolName)) {
+    this.newError(
+      errorMessages.symbolNotDefined(symbolName)
+    );
+    return false;
+  }
+  return true;
+};
+
+Argument.prototype._assertSymbolInRange = function (allowedRange) {
+  if (!allowedRange) {
+    allowedRange = [0, maxAddress];
+  }
+
+  if (this.isOfType(SymbolDirectArgContext, SymbolIndirectArgContext)) {
+    allowedRange[1] = fdaSize;
+  }
+
+  if (this.value < allowedRange[0] || this.value > allowedRange[1]) {
+    this.newError(
+      errorMessages.addressError(this.getText(), allowedRange)
+    );
+  }
+};
+
+Argument.prototype._assertConstantInRange = function () {
+  if (this.value >= minConstant && this.value <= maxConstant) {
     return;
   }
 
-  if (this.isOfType(SymbolDirectArgContext) &&
-    this.value <= fdaSize) {
-    this.newError(
-      errorMessages.addressError(this.getText(), [fdaSize + 1, maxAddress])
-    );
-  }
-
-  if (this.isOfType(SymbolIndirectArgContext) && this.value > fdaSize) {
-    this.newError(
-      errorMessages.addressError(this.getText(), [0, fdaSize])
-    );
-  }
-};
-
-Argument.prototype._assertSymbolInRange = function () {
-  let maxAllowedSize = maxAddress;
-  if (this.isOfType(SymbolDirectArgContext, SymbolIndirectArgContext)) {
-    maxAllowedSize = fdaSize;
-  }
-
-  if (this.value > maxAllowedSize) {
-    this.newError(
-      errorMessages.addressError(this.getText(), [0, maxAllowedSize])
-    );
-  }
+  this.newError(
+    errorMessages.constantRangeError(
+      this.ctx.getText(),
+      [minConstant, maxConstant]
+    )
+  );
 };
 
 Argument.prototype.getText = function () {

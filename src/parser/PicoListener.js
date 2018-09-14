@@ -29,6 +29,15 @@ PicoListener.prototype.exitSymbols = function (ctx) {
 };
 
 
+// Enter a parse tree produced by PicoParser#symbolDeclLine.
+PicoListener.prototype.enterSymbolDeclLine = function (ctx) {
+};
+
+// Exit a parse tree produced by PicoParser#symbolDeclLine.
+PicoListener.prototype.exitSymbolDeclLine = function (ctx) {
+};
+
+
 // Enter a parse tree produced by PicoParser#symbolDecl.
 PicoListener.prototype.enterSymbolDecl = function (ctx) {
 };
@@ -215,6 +224,15 @@ PicoListener.prototype.enterArgument = function (ctx) {
 
 // Exit a parse tree produced by PicoParser#argument.
 PicoListener.prototype.exitArgument = function (ctx) {
+};
+
+
+// Enter a parse tree produced by PicoParser#comment.
+PicoListener.prototype.enterComment = function (ctx) {
+};
+
+// Exit a parse tree produced by PicoParser#comment.
+PicoListener.prototype.exitComment = function (ctx) {
 };
 
 

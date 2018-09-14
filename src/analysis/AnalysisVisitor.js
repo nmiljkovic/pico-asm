@@ -10,7 +10,7 @@ const {
   ConstantArgContext
 } = PicoParser;
 
-const {fdaSize} = require("../architecture");
+const {fdaSize, maxConstant, minConstant} = require("../architecture");
 
 function AnalysisVisitor() {
   PicoVisitor.call(this);
@@ -49,12 +49,6 @@ AnalysisVisitor.prototype.resolveArgumentTypes = function (ctx) {
   return resolved;
 };
 
-AnalysisVisitor.prototype.checkJumpReferences = function () {
-  this.branchTargets.forEach(target => {
-    target.assertSymbolExists();
-  });
-};
-
 // Errors are usually added in order as they occur. An exception to that rule
 // are branch/jump errors, as labels might not exist yet (branching forward).
 // They are added into the errors array at the end.
@@ -79,24 +73,20 @@ AnalysisVisitor.prototype.setSymbol = function (symbolName, value) {
   return this.symbols.set(symbolName.toLowerCase(), value);
 };
 
+AnalysisVisitor.prototype.visitChildren = visitChildren;
+
 AnalysisVisitor.prototype.visitProgram = function (ctx) {
   this.errors = [];
-  this.branchTargets = [];
   this.symbols = new Map();
 
   ctx.symbols().accept(this);
   ctx.origin().accept(this);
   ctx.instructions().accept(this);
 
-  this.checkJumpReferences();
   this.sortErrors();
 
   return this.errors;
 };
-
-AnalysisVisitor.prototype.visitLine = visitChildren;
-AnalysisVisitor.prototype.visitSymbols = visitChildren;
-AnalysisVisitor.prototype.visitInstructions = visitChildren;
 
 // Handle symbol declaration:
 // * symbol must not exist
@@ -111,22 +101,38 @@ AnalysisVisitor.prototype.visitSymbolDecl = function (ctx) {
     this.newError(identifier, errorMessages.symbolAlreadyDefined(name));
     return;
   }
-  // Symbol's value must be >= 0.
-  if (value < 0) {
-    this.newError(constant, errorMessages.symbolGtOrEqZero(name));
+  // Symbol's value must be inside bounds.
+  if (value < minConstant || value > maxConstant) {
+    this.newError(constant, errorMessages.symbolValueOutOfRange(name, value));
     value = 1;
   }
   this.setSymbol(name, value);
 };
 
 // Handle origin statement.
-// Origin must start after fixed data array.
+// Origin must start after fixed data area.
 AnalysisVisitor.prototype.visitOrigin = function (ctx) {
   const constant = ctx.constant();
   const origin = constant.accept(this);
   if (origin <= fdaSize) {
     this.newError(constant, errorMessages.originInvalidValue(fdaSize + 1));
   }
+};
+
+AnalysisVisitor.prototype.visitInstructions = function (ctx) {
+  // First visit all labels, then all instructions.
+  // This ensures all labels are defined as symbols
+  // before evaluating instructions.
+  ctx.line().forEach(instruction => {
+    if (instruction.label()) {
+      instruction.label().accept(this);
+    }
+  });
+  ctx.line().forEach(instruction => {
+    if (instruction.instruction()) {
+      instruction.instruction().accept(this);
+    }
+  });
 };
 
 // Handle label declaration:
@@ -139,15 +145,16 @@ AnalysisVisitor.prototype.visitLabel = function (ctx) {
     this.newError(identifier, errorMessages.symbolAlreadyDefined(name));
     return;
   }
+  // Symbol value is 8 so it ensures it cannot be used
+  // in certain instructions which can only access FDA.
   this.setSymbol(name, 8);
 };
 
 // Verify move instruction arguments:
 // * 1st argument must be a memory location
-// * in 3 argument version, 3rd argument must be a constant
-//   in the form of #symbol or hardcoded integer
 AnalysisVisitor.prototype.visitMoveInstr = function (ctx) {
   const args = this.resolveArgumentTypes(ctx);
+  args.forEach(arg => arg.assertSymbolExists());
 
   if (args.length) {
     // First argument must be a memory location.
@@ -159,10 +166,10 @@ AnalysisVisitor.prototype.visitMoveInstr = function (ctx) {
   }
 
   if (args.length === 3) {
-    // Third argument must be a constant if it exists.
     const third = args[2];
     third.assertOfType(
       ConstantArgContext,
+      SymbolDirectArgContext,
       SymbolConstantArgContext,
     );
   }
@@ -171,58 +178,64 @@ AnalysisVisitor.prototype.visitMoveInstr = function (ctx) {
 AnalysisVisitor.prototype.visitArithmeticInstr = function (ctx) {
   const args = this.resolveArgumentTypes(ctx);
   const destination = args[0];
+  const operands = args.slice(1);
+
+  // Destination can only be a symbol reference
+  // with direct or indirect addressing.
   destination.assertOfType(
     SymbolDirectArgContext,
     SymbolIndirectArgContext,
   );
-
-  const operands = args.slice(1);
+  destination.assertSymbolExists();
 
   // Ensure that only a single operand can be a constant.
   const constants = operands.filter(operand => operand.isOfType(
     SymbolConstantArgContext,
     ConstantArgContext,
   ));
+  // Range check constant operands.
+  constants.forEach(operand => operand.assertSymbolExists());
   if (constants.length > 1) {
     this.newError(ctx, errorMessages.singleConstant());
   }
 
   // Ensure memory references cannot reference zero.
   operands
-    .filter(operand => operand.value === 0)
     .filter(operand => operand.isOfType(
       SymbolDirectArgContext,
       SymbolIndirectArgContext,
     ))
-    .forEach(operand => {
-      const message = errorMessages.addressError(
-        operand.ctx.getText(),
-        [1, fdaSize]
-      );
-      this.newError(operand.ctx, message);
-    });
+    .filter(operand => operand.assertSymbolExists([1, fdaSize]));
 };
 
 // Verify branch instruction arguments.
-// * 1st operand must be a symbol direct or indirect memory access
-// * 2nd operand behaves like the first argument OR it can be constant 0
+// * If any constants are provided, they must be 0
 // * 3rd argument (branch target) must be a symbol direct or indirect memory access
 AnalysisVisitor.prototype.visitBranchInstr = function (ctx) {
   const args = this.resolveArgumentTypes(ctx);
   const branchTarget = ctx.branchTarget().accept(this);
 
-  args
-    .filter(arg => arg.isOfType(ConstantArgContext))
+  const constantArgs = args
+    .filter(arg => arg.isOfType(ConstantArgContext));
+
+  if (constantArgs.length > 1) {
+    this.newError(ctx, errorMessages.singleConstant());
+  }
+
+  constantArgs
     .filter(arg => arg.value !== 0)
     .forEach(arg => {
       this.newError(arg.ctx, errorMessages.constantMustBeZero());
     });
 
-  args.forEach(arg => arg.assertOfType(
-    SymbolDirectArgContext,
-    SymbolIndirectArgContext,
-    ConstantArgContext
-  ));
+  args.forEach(arg => {
+    arg.assertOfType(
+      SymbolDirectArgContext,
+      SymbolIndirectArgContext,
+      ConstantArgContext
+    );
+    arg.assertSymbolExists();
+  });
 
   // Verify that branch target is either a
   // memory direct or memory indirect access.
@@ -230,10 +243,12 @@ AnalysisVisitor.prototype.visitBranchInstr = function (ctx) {
     SymbolDirectArgContext,
     SymbolIndirectArgContext,
   );
+  branchTarget.assertBranchTargetExists();
 };
 
 AnalysisVisitor.prototype.visitIoInstr = function (ctx) {
   const args = this.resolveArgumentTypes(ctx);
+  args.forEach(arg => arg.assertSymbolExists());
 
   const sourceOrDest = args[0];
   sourceOrDest.assertOfType(
@@ -254,8 +269,12 @@ AnalysisVisitor.prototype.visitIoInstr = function (ctx) {
     return;
   }
 
+  // IO instructions have a different allowed constant range since
+  // the value is encoded into the instruction instead of the next word.
   if (length.value < 1 || length.value > 127) {
-    const message = errorMessages.constantRangeError(length.ctx.getText(), [1, 127]);
+    const message = errorMessages.constantRangeError(
+      length.ctx.getText(), [1, 127]
+    );
     this.newError(length.ctx, message);
   }
 };
@@ -271,20 +290,13 @@ AnalysisVisitor.prototype.visitStopInstr = function (ctx) {
       SymbolDirectArgContext,
       SymbolIndirectArgContext
     ))
-    .filter(arg => arg.value === 0)
-    .forEach(arg => {
-      const message = errorMessages.addressError(arg.ctx.getText(), [1, fdaSize]);
-      this.newError(arg.ctx, message);
-    });
+    .forEach(arg => arg.assertSymbolExists([1, fdaSize]));
 };
 
 AnalysisVisitor.prototype.visitCallInstr = function (ctx) {
-  const symbol = ctx.symbolDirectArg().accept(this);
-  symbol.isBranchTarget = true;
-  this.branchTargets.push(symbol);
-  return symbol;
+  const subroutine = ctx.symbolDirectArg().accept(this);
+  subroutine.assertBranchTargetExists();
 };
-
 
 // Returns identifier name.
 AnalysisVisitor.prototype.visitIdentifier = function (ctx) {
@@ -298,16 +310,12 @@ AnalysisVisitor.prototype.visitConstant = function (ctx) {
 
 // Type checks argument.
 AnalysisVisitor.prototype.visitArgument = function (ctx) {
-  const arg = ctx.children[0].accept(this);
-  arg.assertSymbolExists();
-  return arg;
+  return ctx.children[0].accept(this);
 };
 
 // Saves branch target reference for 2nd pass type checking.
 AnalysisVisitor.prototype.visitBranchTarget = function (ctx) {
   const symbol = ctx.children[0].accept(this);
-  symbol.isBranchTarget = true;
-  this.branchTargets.push(symbol);
   return symbol;
 };
 

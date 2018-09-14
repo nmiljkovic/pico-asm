@@ -1,0 +1,46 @@
+	; other examples cover most execution logic
+	; this one covers instructions with limited use cases
+	; and things like arithmetic overflows
+	adrA = 100
+	adrB = 200
+	a = 1
+	b = 2
+	c = 5
+
+	org 8
+	; cover mov type 3
+	mov a, #adrA
+	mov b, #adrB
+	mov c, 3
+	in (a), c
+	mov (b), (a), 3
+	out (b), c
+
+	; cover mov type 4
+	in (a), c
+	mov (b), (a), c
+	out (b), c
+
+	; overflow mul
+	mov a, 100
+	mul a, a, 10000
+	out a
+	; overflow add
+	mov a, 32767
+	add a, a, 100
+	out a
+	; overflow sub
+	mov a, -32768
+	sub a, a, 100
+	out a
+
+	; cover branch with target symbol value
+	mov c, #label
+	bgt 0, a, (c)
+
+	stop
+
+    ; must branch here
+label:
+    stop a
+

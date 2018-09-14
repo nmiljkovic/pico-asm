@@ -10,3 +10,6 @@ mov (b), c
 mov b, x
 mov b, x, #c
 mov b, x, 5
+mov b, x, c
+mov b, #lbl
+lbl: stop

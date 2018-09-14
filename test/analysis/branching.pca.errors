@@ -1,2 +1,6 @@
-12:10:10:Symbol 'label2' has not been defined.
-13:10:10:Address error in argument 'c'. Legal address [8..65535].
+15:10:10:Symbol 'label2' has not been defined.
+16:4:4:Symbol 'd' has not been defined.
+16:7:7:Symbol 'e' has not been defined.
+16:10:10:Symbol 'f' has not been defined.
+17:7:7:Only constant 0 is allowed.
+18:0:10:Instruction supports only 1 constant argument.

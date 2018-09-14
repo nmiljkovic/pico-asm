@@ -2,7 +2,6 @@
 	tek = 2
 	s = 3
 	i = 4
-
 	org 8
 
 	in n
