@@ -128,11 +128,18 @@ AnalysisVisitor.prototype.visitInstructions = function (ctx) {
       instruction.label().accept(this);
     }
   });
+
+  let instructionCount = 0;
   ctx.line().forEach(instruction => {
     if (instruction.instruction()) {
+      instructionCount++;
       instruction.instruction().accept(this);
     }
   });
+
+  if (instructionCount === 0) {
+    this.newError(ctx, errorMessages.noInstructions());
+  }
 };
 
 // Handle label declaration:

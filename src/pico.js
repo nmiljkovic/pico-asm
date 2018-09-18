@@ -15,6 +15,8 @@ module.exports = {
     const tokens = new CommonTokenStream(lexer);
     const parser = new PicoParser(tokens);
     const errorListener = new PicoErrorListener();
+    lexer.removeErrorListeners();
+    lexer.addErrorListener(errorListener);
     parser.removeErrorListeners();
     parser.addErrorListener(errorListener);
     parser.buildParseTrees = true;

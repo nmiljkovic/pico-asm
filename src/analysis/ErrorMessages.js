@@ -1,4 +1,7 @@
 module.exports = {
+  noInstructions: function () {
+    return `Program must have at least 1 instruction.`;
+  },
   symbolNotDefined: function (symbolName) {
     return `Symbol '${symbolName}' has not been defined.`;
   },

@@ -3,7 +3,13 @@ const PicoLexer = require("./parser/PicoLexer").PicoLexer;
 
 function PrettyPrintVisitor() {
   PicoVisitor.call(this);
-  this.indent = "\t";
+  // Instruction indent.
+  this.indent = "    ";
+  // Margin between line and comment.
+  this.lineMargin = "  ";
+  // A map of label to line length.
+  this.indentMap = new Map();
+  this.latestLabel = "";
   return this;
 }
 
@@ -48,7 +54,7 @@ PrettyPrintVisitor.prototype.visitProgram = function (ctx) {
     output.push(symbols);
   }
   output.push(origin);
-  output.push(instructions + "\n");
+  output.push(instructions.replace(/\s+$/, "") + "\n");
   return output.join("\n");
 };
 
@@ -56,21 +62,68 @@ PrettyPrintVisitor.prototype.visitComment = function (ctx) {
   return ctx.getText();
 };
 
-PrettyPrintVisitor.prototype.visitLine = function (ctx) {
-  let output = "";
-  if (ctx.label()) {
-    output += ctx.label().accept(this);
+// _setLineLength sets maximum line length for current label.
+PrettyPrintVisitor.prototype._setLineLength = function (line) {
+  const lineLength = this.indentMap.get(this.latestLabel) || 0;
+  const max = lineLength > line.length ? lineLength : line.length;
+  this.indentMap.set(this.latestLabel, max);
+};
+
+// Pad line
+PrettyPrintVisitor.prototype._padLine = function (line, comment) {
+  const maxLength = this.indentMap.get(this.latestLabel);
+  if (comment) {
+    return line.padEnd(maxLength, " ") + this.lineMargin + comment;
   }
-  if (ctx.instruction()) {
-    if (output.length) {
-      output += "\n";
+  return line;
+};
+
+PrettyPrintVisitor.prototype.visitInstructions = function (ctx) {
+  // First pass through all lines to find the maximum line length.
+  // These lengths are separated per label.
+  ctx.line().forEach(instruction => {
+    if (instruction.label()) {
+      const label = instruction.label().accept(this);
+      this.latestLabel = label;
+      this._setLineLength(label);
     }
-    output += "\t" + ctx.instruction().accept(this);
-  }
-  if (ctx.comment()) {
-    output += "\t" + ctx.comment().accept(this);
-  }
-  return output;
+    if (instruction.instruction()) {
+      const instr = instruction.instruction().accept(this);
+      this._setLineLength(this.indent + instr);
+    }
+  });
+
+  // Use the information recovered from the previous pass to properly format
+  // all labels, lines and comments.
+  this.latestLabel = "";
+  const output = [];
+
+  ctx.line().forEach(ctx => {
+    const label = ctx.label() ? ctx.label().accept(this) : "";
+    const instruction = ctx.instruction() ? ctx.instruction().accept(this) : "";
+    const comment = ctx.comment() ? ctx.comment().accept(this) : "";
+
+    if (label.length) {
+      this.latestLabel = label;
+      // If the label doesn't have an instruction accompanied in the same line
+      // format label + comment, otherwise format label on the first line
+      // and instruction + comment on the second line.
+      if (!instruction.length) {
+        output.push(this._padLine(label, comment));
+      } else {
+        output.push(label);
+        output.push(this._padLine(this.indent + instruction, comment));
+      }
+    } else if (instruction) {
+      output.push(this._padLine(this.indent + instruction, comment));
+    } else if (comment) {
+      output.push(this._padLine(this.indent + comment));
+    } else {
+      output.push("");
+    }
+  });
+
+  return output.join("\n");
 };
 
 PrettyPrintVisitor.prototype.visitSymbolDeclLine = function (ctx) {
